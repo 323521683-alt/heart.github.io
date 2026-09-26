@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>守护心力量 · 心理健康科普</title>
+<style>
+  :root{
+    --stroke: rgba(255,255,255,.18);
+    --text: #eef1ff;
+    --muted: rgba(238,241,255,.62);
+    --ease: cubic-bezier(.2,.8,.2,1);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{ margin:0; padding:0; }
+
+  body{
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    background: #06060f;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeSpeed;
+  }
+
+  /* ============ 背景光斑（改用径向渐变，零模糊滤镜） ============ */
+  .bg{
+    position: fixed; inset: 0; z-index: -2; overflow: hidden;
+    background: #06060f;
+  }
+  .bg::before{
+    content:"";
+    position:absolute; inset:0;
+    background:
+      radial-gradient(1200px 700px at 12% -5%, rgba(27,32,80,.9) 0%, transparent 62%),
+      radial-gradient(900px 620px at 88% 8%, rgba(45,17,66,.85) 0%, transparent 60%),
+      radial-gradient(1100px 800px at 50% 108%, rgba(4,38,58,.85) 0%, transparent 62%);
+  }
+
+  .orb{
+    position: absolute; border-radius: 50%;
+    pointer-events: none;
+    transform: translate3d(0,0,0);
+    animation: float 26s ease-in-out infinite;
+  }
+  .o1{
+    width: 900px; height: 900px; left:-260px; top:-340px; animation-duration:24s;
+    background: radial-gradient(circle, rgba(59,91,255,.46) 0%, rgba(59,91,255,.14) 34%, transparent 68%);
+  }
+  .o2{
+    width: 780px; height: 780px; right:-220px; top:-60px; animation-duration:29s; animation-delay:-9s;
+    background: radial-gradient(circle, rgba(168,85,247,.42) 0%, rgba(168,85,247,.12) 36%, transparent 70%);
+  }
+  .o3{
+    width: 1000px; height: 1000px; left:26%; bottom:-460px; animation-duration:33s; animation-delay:-15s;
+    background: radial-gradient(circle, rgba(6,182,212,.36) 0%, rgba(6,182,212,.1) 36%, transparent 70%);
+  }
+  .o4{
+    width: 720px; height: 720px; right:14%; bottom:-260px; animation-duration:27s; animation-delay:-5s;
+    background: radial-gradient(circle, rgba(236,72,153,.34) 0%, rgba(236,72,153,.1) 36%, transparent 70%);
+  }
+
+  @keyframes float{
+    0%,100%{ transform: translate3d(0,0,0); }
+    33%    { transform: translate3d(46px,-34px,0); }
+    66%    { transform: translate3d(-36px,32px,0); }
+  }
+
+  /* ============ 液态玻璃基础 ============ */
+  .glass{
+    position: relative;
+    background: linear-gradient(140deg, rgba(255,255,255,.14), rgba(255,255,255,.04) 45%, rgba(255,255,255,.09));
+    -webkit-backdrop-filter: blur(9px);
+    backdrop-filter: blur(9px);
+    border: 1px solid var(--stroke);
+    border-radius: 26px;
+    box-shadow:
+      0 20px 44px -14px rgba(0,0,0,.72),
+      inset 0 1px 0 rgba(255,255,255,.5),
+      inset 0 -20px 34px -24px rgba(130,175,255,.4);
+    overflow: hidden;
+    /* 关键：把重绘范围锁在元素内部 */
+    contain: layout style paint;
+  }
+
+  /* 跟随鼠标的高光（仅在悬停时计算，rAF 节流） */
+  .glass::before{
+    content:"";
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(340px circle at var(--mx,50%) var(--my,50%),
+                rgba(255,255,255,.2), rgba(255,255,255,.05) 42%, transparent 68%);
+    opacity: 0;
+    transition: opacity .3s ease;
+  }
+  .glass:hover::before,
+  .glass:focus-visible::before{ opacity: 1; }
+
+  /* 流动玻璃边缘：默认暂停，悬停才播放 */
+  .glass::after{
+    content:"";
+    position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(115deg,
+      rgba(255,255,255,.85), rgba(255,255,255,0) 22%,
+      rgba(255,255,255,0) 52%, rgba(140,190,255,.7) 74%, rgba(255,150,255,.65) 92%);
+    background-size: 260% 260%;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: sheen 9s linear infinite;
+    animation-play-state: paused;
+    opacity: .8;
+  }
+  .glass:hover::after,
+  .glass:focus-visible::after{ animation-play-state: running; }
+
+  @keyframes sheen{
+    0%  { background-position: 0% 50%; }
+    100%{ background-position: 200% 50%; }
+  }
+
+  /* ============ 顶部 ============ */
+  .hero{
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 92px 26px 54px;
+    text-align: center;
+    position: relative;
+  }
+  .badge{
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 18px; border-radius: 999px;
+    font-size: 13px; letter-spacing: .08em; color: rgba(238,241,255,.82);
+    background: linear-gradient(140deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+    border: 1px solid rgba(255,255,255,.2);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 10px 26px -14px rgba(0,0,0,.8);
+  }
+  .badge i{
+    width: 7px; height: 7px; border-radius: 50%; background: #6ee7b7;
+    box-shadow: 0 0 12px #6ee7b7; animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+
+  h1{
+    font-size: clamp(42px, 8vw, 78px);
+    margin: 26px 0 18px;
+    letter-spacing: .04em;
+    font-weight: 800;
+    line-height: 1.08;
+  }
+  h1 .grad{
+    background: linear-gradient(115deg, #8ab4ff 0%, #c9a6ff 45%, #7ef0e0 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .hero p{
+    font-size: 16px; line-height: 1.9; color: var(--muted);
+    max-width: 640px; margin: 0 auto;
+  }
+
+  /* ============ 卡片网格 ============ */
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(292px, 1fr));
+    gap: 22px;
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 0 26px 90px;
+  }
+
+  .card{
+    padding: 26px 24px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+    cursor: pointer;
+    min-height: 262px;
+    /* 只过渡 transform，走合成器 */
+    transition: transform .38s var(--ease);
+    animation: cardIn .6s var(--ease) backwards;
+    outline: none;
+  }
+  @keyframes cardIn{
+    from{ opacity: 0; transform: translate3d(0,24px,0); }
+    to  { opacity: 1; transform: translate3d(0,0,0); }
+  }
+
+  .card:hover, .card:focus-visible{
+    transform: translate3d(0,-8px,0);
+    /* box-shadow 不做过渡，避免逐帧重绘阴影 */
+    box-shadow:
+      0 32px 62px -18px rgba(0,0,0,.85),
+      0 0 0 1px rgba(255,255,255,.2),
+      0 0 70px -22px var(--accent);
+  }
+  .card:active{ transform: translate3d(0,-3px,0) scale(.99); }
+
+  .card > *:not(.blob){ position: relative; z-index: 2; }
+
+  /* 装饰光斑：纯径向渐变，无 filter、无 SVG 滤镜 */
+  .blob{
+    position: absolute; z-index: 0;
+    width: 240px; height: 240px; right: -72px; top: -84px;
+    border-radius: 50%;
+    opacity: .34;
+    transition: transform .7s var(--ease), opacity .4s ease;
+    pointer-events: none;
+    transform: translate3d(0,0,0);
+  }
+  .card:hover .blob{
+    transform: translate3d(-14px, 16px, 0) scale(1.22);
+    opacity: .6;
+  }
+
+  .card-icon{
+    width: 52px; height: 52px; border-radius: 17px;
+    display: grid; place-items: center;
+    font-size: 24px; line-height: 1;
+    background: linear-gradient(140deg, rgba(255,255,255,.24), rgba(255,255,255,.06));
+    border: 1px solid rgba(255,255,255,.26);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 22px -14px rgba(0,0,0,.9);
+    transition: box-shadow .3s ease, transform .3s var(--ease);
+  }
+  .card:hover .card-icon{
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 0 26px -4px var(--accent);
+    transform: translate3d(0,-2px,0);
+  }
+
+  .card h3{ margin: 2px 0 0; font-size: 20px; font-weight: 700; letter-spacing: .02em; }
+  .card .en{
+    margin: 3px 0 0; font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: rgba(238,241,255,.4);
+  }
+  .card .summary{
+    margin: 2px 0 0; font-size: 14px; line-height: 1.75;
+    color: rgba(238,241,255,.7); flex: 1;
+  }
+
+  .card-foot{
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; margin-top: 6px;
+  }
+  .tag{
+    display: inline-block; padding: 5px 12px; border-radius: 999px;
+    font-size: 11.5px; letter-spacing: .04em;
+    color: rgba(238,241,255,.82);
+    background: rgba(255,255,255,.09);
+    border: 1px solid rgba(255,255,255,.16);
+    white-space: nowrap;
+  }
+  .hint{
+    font-size: 12.5px; color: rgba(238,241,255,.5);
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: color .3s ease;
+  }
+  .hint i{ font-style: normal; transition: transform .3s var(--ease); }
+  .card:hover .hint{ color: var(--accent); }
+  .card:hover .hint i{ transform: translate3d(4px,0,0); }
+
+  .card.danger{
+    border-color: rgba(255,90,120,.4);
+    background: linear-gradient(140deg, rgba(255,90,120,.18), rgba(255,255,255,.04) 55%, rgba(255,255,255,.08));
+  }
+
+  /* ============ 弹窗 ============ */
+  .overlay{
+    position: fixed; inset: 0; z-index: 100;
+    display: grid; place-items: center;
+    padding: 24px;
+    background: rgba(4,4,12,.55);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    opacity: 0; pointer-events: none;
+    transition: opacity .28s ease;
+  }
+  .overlay.open{ opacity: 1; pointer-events: auto; }
+
+  .modal{
+    width: min(740px, 100%);
+    max-height: min(86vh, 880px);
+    display: flex; flex-direction: column;
+    border-radius: 28px;
+    transform: translate3d(0,18px,0) scale(.94);
+    transition: transform .36s var(--ease);
+  }
+  .overlay.open .modal{ transform: translate3d(0,0,0) scale(1); }
+
+  .modal-head{
+    display: flex; align-items: center; gap: 14px;
+    padding: 24px 26px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.09);
+    position: relative; z-index: 4;
+  }
+  .modal-head .card-icon{ width: 54px; height: 54px; font-size: 25px; flex: 0 0 auto; }
+  .modal-head h2{ margin: 0; font-size: 23px; letter-spacing: .03em; }
+  .modal-head .en{
+    margin: 3px 0 0; font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: rgba(238,241,255,.42);
+  }
+  .modal-head .tag{ margin-left: auto; }
+
+  .modal-close{
+    flex: 0 0 auto;
+    width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 14px; color: rgba(238,241,255,.75);
+    background: rgba(255,255,255,.09);
+    border: 1px solid rgba(255,255,255,.2);
+    cursor: pointer;
+    transition: background .22s ease, transform .22s var(--ease), color .22s ease;
+  }
+  .modal-close:hover{ background: rgba(255,255,255,.2); color:#fff; transform: rotate(90deg); }
+
+  .modal-body{
+    padding: 22px 26px 8px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    position: relative; z-index: 4;
+  }
+  .modal-body::-webkit-scrollbar{ width: 8px; }
+  .modal-body::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.16); border-radius: 8px; }
+  .modal-body::-webkit-scrollbar-track{ background: transparent; }
+
+  .modal-body h4{
+    display: flex; align-items: center; gap: 9px;
+    margin: 6px 0 14px; font-size: 14px; letter-spacing: .1em;
+    color: rgba(238,241,255,.72); font-weight: 600;
+  }
+  .modal-body h4 .dot{
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent, #8ab4ff);
+    box-shadow: 0 0 14px var(--accent, #8ab4ff);
+  }
+  .modal-body section{ margin-bottom: 26px; }
+
+  .signs{ list-style: none; margin: 0; padding: 0; }
+  .signs li{
+    position: relative; padding-left: 20px; margin-bottom: 10px;
+    font-size: 14.5px; line-height: 1.75; color: rgba(238,241,255,.82);
+  }
+  .signs li::before{
+    content:""; position: absolute; left: 3px; top: 9px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent, #8ab4ff);
+    box-shadow: 0 0 10px var(--accent, #8ab4ff);
+  }
+
+  .tips{ list-style: none; margin: 0; padding: 0; }
+  .tips li{
+    display: flex; gap: 13px; padding: 14px 0;
+    border-bottom: 1px dashed rgba(255,255,255,.09);
+  }
+  .tips li:last-child{ border-bottom: none; }
+  .tips .num{
+    flex: 0 0 27px; height: 27px; border-radius: 9px;
+    display: grid; place-items: center;
+    font-size: 12.5px; font-weight: 700; color: #fff;
+    background: linear-gradient(140deg, rgba(255,255,255,.22), rgba(255,255,255,.05));
+    border: 1px solid rgba(255,255,255,.22);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .tips b{ display: block; font-size: 15px; margin-bottom: 5px; font-weight: 600; }
+  .tips p{ margin: 0; font-size: 14px; line-height: 1.75; color: rgba(235,240,255,.7); }
+
+  .alert{
+    margin: 4px 0 10px; padding: 16px 18px; border-radius: 16px;
+    font-size: 14px; line-height: 1.75; color: #ffd9e2;
+    background: linear-gradient(135deg, rgba(255,80,110,.2), rgba(255,80,110,.06));
+    border: 1px solid rgba(255,120,150,.35);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+  }
+
+  .modal-foot{
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    padding: 14px 22px 20px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    position: relative; z-index: 4;
+  }
+  .nav-btn{
+    padding: 9px 16px; border-radius: 999px;
+    font-size: 13px; color: rgba(238,241,255,.85);
+    background: linear-gradient(140deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+    border: 1px solid rgba(255,255,255,.2);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .22s ease, transform .22s var(--ease);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.4);
+  }
+  .nav-btn:hover{
+    background: linear-gradient(140deg, rgba(255,255,255,.28), rgba(255,255,255,.1));
+    transform: translate3d(0,-2px,0);
+  }
+  .nav-btn:active{ transform: translate3d(0,0,0); }
+  .counter{ font-size: 12.5px; color: rgba(238,241,255,.5); letter-spacing: .08em; }
+
+  /* ============ 页脚 ============ */
+  footer{
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 26px 70px;
+    text-align: center;
+    font-size: 12.5px;
+    line-height: 1.9;
+    color: rgba(238,241,255,.38);
+  }
+  footer strong{ color: rgba(238,241,255,.62); font-weight: 600; }
+
+  /* ============ 响应式 & 降级 ============ */
+  @media (max-width: 768px){
+    .orb{ animation: none; }
+    .glass{ -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
+    .glass::after{ animation: none; }
+  }
+
+  @media (max-width: 560px){
+    .hero{ padding: 66px 20px 40px; }
+    .grid{ padding: 0 18px 70px; gap: 16px; }
+    .card{ min-height: 0; padding: 22px 20px 18px; }
+    .overlay{ padding: 12px; }
+    .modal{ border-radius: 22px; max-height: 90vh; }
+    .modal-head{ padding: 20px 18px 15px; gap: 11px; }
+    .modal-head h2{ font-size: 19px; }
+    .modal-body{ padding: 18px 18px 6px; }
+    .modal-foot{ padding: 12px 16px 16px; }
+    .nav-btn{ padding: 8px 12px; font-size: 12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true">
+  <span class="orb o1"></span>
+  <span class="orb o2"></span>
+  <span class="orb o3"></span>
+  <span class="orb o4"></span>
+</div>
+
+<header class="hero">
+  <div class="badge"><i></i>心理健康科普 · 科学 · 温柔 · 可操作</div>
+  <h1>守护<span class="grad">心力量</span></h1>
+  <p>了解它，才不会被它吓到。点击下面任意一张玻璃卡片，打开属于它的独立窗口——看看那些真实存在的症状，以及今天就能开始的调整方法。</p>
+</header>
+
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  <strong>温馨提示</strong>：本页内容为心理健康科普，不能替代专业诊断与治疗。<br>
+  如果你长期被情绪或身体症状困扰，请前往正规医院精神心理科就诊。<br>
+  全国心理援助热线：<strong>12356</strong>
+</footer>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true">
+  <div class="modal glass" id="modal"></div>
+</div>
+
+<script>
+/* ==================== 数据 ==================== */
+const conditions = [
+  {
+    icon:'🌧️', name:'抑郁症', en:'Major Depressive Disorder', tag:'情绪障碍', color:'#6d8dff',
+    summary:'持续两周以上的情绪低落与兴趣减退，是一种疾病，而不是“想太多”。',
+    signs:[
+      '几乎每天大部分时间情绪低落、空虚，或莫名烦躁易怒',
+      '对以前喜欢的事情失去兴趣，体验不到快乐',
+      '精力明显下降，起床、洗漱都像在搬一座山',
+      '睡眠与食欲改变：失眠或嗜睡，暴食或毫无胃口',
+      '注意力涣散、强烈自责，觉得自己“没有价值”'
+    ],
+    tips:[
+      { t:'先稳住节律，再谈改变', d:'情绪最难控制的时候，先控制作息。每天同一时间起床，起床后见 15 分钟自然光，能帮助重置生物钟。' },
+      { t:'把目标缩小到“能完成”', d:'不要要求自己“赶紧好起来”，只要求“今天洗个脸”“下楼走 10 分钟”。完成感本身就是药。' },
+      { t:'记录，而不是反刍', d:'把想法写下来，在旁边标注一句：“这是症状在说话，不是事实。”写出来比在脑子里循环要轻得多。' },
+      { t:'保留至少一条连接', d:'哪怕只是给一位朋友发一句“最近不太好”，也比完全断联更有保护作用。孤独会加重抑郁。' },
+      { t:'该看医生就看医生', d:'中重度抑郁，药物治疗 + 心理治疗的有效率远高于硬扛。求助是能力，不是软弱。' }
+    ],
+    alert:'⚠️ 如果出现自伤、自杀的念头，请立刻告诉信任的人，不要独处，并拨打全国心理援助热线 12356（24 小时）。'
+  },
+  {
+    icon:'😰', name:'广泛性焦虑', en:'Generalized Anxiety Disorder', tag:'焦虑障碍', color:'#ffb35c',
+    summary:'对生活中各种事情长期过度担心，明知没必要，却停不下来。',
+    signs:[
+      '对工作、健康、家人、金钱等长期过度担忧，难以控制',
+      '肌肉紧绷、肩颈酸痛、坐不住、容易受惊',
+      '容易疲劳、注意力难以集中、烦躁易怒',
+      '入睡困难、睡不安稳，醒来仍觉得累',
+      '常伴随心慌、肠胃不适、出汗等身体反应'
+    ],
+    tips:[
+      { t:'4-7-8 呼吸法', d:'吸气 4 秒，屏息 7 秒，缓慢呼气 8 秒，重复 4 轮。呼气比吸气长，能直接激活副交感神经。' },
+      { t:'设置“担忧时间”', d:'每天固定 15 分钟专门用来担忧。其他时间冒出担忧，就写下来，留到那个时段再想。' },
+      { t:'渐进式肌肉放松', d:'从脚趾到额头，逐组绷紧 5 秒再彻底放松 10 秒。身体松下来，大脑会收到“安全”的信号。' },
+      { t:'减少咖啡因与酒精', d:'它们会直接放大心跳与警觉水平，让焦虑更容易被点燃。' },
+      { t:'区分可控与不可控', d:'把担忧分成两栏，只对“我能做点什么”的那一栏列行动，另一栏练习放下。' }
+    ]
+  },
+  {
+    icon:'💓', name:'惊恐障碍', en:'Panic Disorder', tag:'焦虑障碍', color:'#ff6f91',
+    summary:'突如其来的强烈恐惧与身体反应，十几分钟内达到高峰，之后害怕再次发作。',
+    signs:[
+      '突然出现心悸、胸闷、窒息感、发抖、头晕、手脚发麻',
+      '强烈感到“我要死了”“我要失控了”“我要疯了”',
+      '发作通常在 10–20 分钟内达到顶峰，然后自行缓解',
+      '之后长期担心再次发作，开始回避地铁、商场、独处等场景'
+    ],
+    tips:[
+      { t:'记住最关键的事实', d:'惊恐发作不会致命，也不会让人疯掉，通常十几分钟就会自己过去。知道它会过去，本身就能削弱它。' },
+      { t:'用腹式呼吸，而不是大口喘气', d:'大口呼吸会加重过度换气，让症状更凶。把手放在腹部，缓慢、均匀地呼吸。' },
+      { t:'5-4-3-2-1 接地法', d:'说出 5 样看到的、4 样摸到的、3 种听到的、2 种闻到的、1 种尝到的，把注意力拉回当下。' },
+      { t:'不要回避', d:'回避越彻底，恐惧范围越大。带着一点不安，小步回到原来的场景，大脑才会重新学习“这里其实安全”。' },
+      { t:'专业治疗非常有效', d:'认知行为治疗（CBT）对惊恐障碍效果明确，必要时配合药物，多数人可以明显改善。' }
+    ]
+  },
+  {
+    icon:'🫥', name:'社交焦虑障碍', en:'Social Anxiety Disorder', tag:'焦虑障碍', color:'#a78bfa',
+    summary:'在社交或需要表现的场合中，强烈害怕被评价、被否定、出丑。',
+    signs:[
+      '害怕在他人面前发言、吃饭、写字，担心被看出紧张',
+      '紧张时脸红、出汗、手抖、声音发颤、脑子空白',
+      '事前反复预演，事后反复回想“刚才是不是很蠢”',
+      '主动回避聚会、发言、面试等场合，影响学业与工作'
+    ],
+    tips:[
+      { t:'做一张“恐惧阶梯”', d:'把让你紧张的场合从最轻到最重排成清单，从最容易的一级开始练习，每周推进一小步。' },
+      { t:'把注意力移出去', d:'焦虑时我们习惯盯着自己（“我看起来怎么样”）。刻意去听对方说了什么、环境是什么样，焦虑会自然下降。' },
+      { t:'减少“安全行为”', d:'抓着手机、躲在角落、全程不说话会短期缓解，长期却让焦虑更牢固。试着一次少做一点。' },
+      { t:'提前准备 2–3 个话题', d:'把“临场发挥”变成“有备而来”，能明显降低开口的门槛。' },
+      { t:'记得“聚光灯效应”', d:'别人注意你的程度，远低于你的想象。大多数人在忙着担心自己。' }
+    ]
+  },
+  {
+    icon:'🔁', name:'强迫症', en:'Obsessive-Compulsive Disorder', tag:'强迫及相关障碍', color:'#4ecdc4',
+    summary:'反复出现不受欢迎的念头，并用重复行为去缓解焦虑，明知不合理却停不下来。',
+    signs:[
+      '反复出现令人痛苦的念头：脏、伤害、对称、怀疑、亵渎',
+      '用重复行为缓解焦虑：反复洗手、检查、数数、默念',
+      '明知不合理，但不去做就极度难受',
+      '每天耗费大量时间，明显影响生活、学习或人际'
+    ],
+    tips:[
+      { t:'核心方法是 ERP', d:'暴露与反应预防：接触引发焦虑的情境，但不做仪式行为。这是目前循证支持最强的心理治疗。' },
+      { t:'延迟，而不是硬禁', d:'想检查时，先等 5 分钟，再等 10 分钟，逐步拉长。焦虑会自己回落，这个过程叫“习惯化”。' },
+      { t:'给想法贴标签', d:'出现念头时说一句：“这是强迫思维。”不跟它辩论，也不去做“中和”动作。' },
+      { t:'记录触发与焦虑值', d:'写下情境和 0–10 分的焦虑程度，你会亲眼看到它上升、到达顶峰、再自己下降。' },
+      { t:'中重度请寻求专业帮助', d:'SSRI 类药物与 CBT 对强迫症都有明确疗效，越早干预越好。' }
+    ]
+  },
+  {
+    icon:'🌗', name:'双相情感障碍', en:'Bipolar Disorder', tag:'心境障碍', color:'#f472b6',
+    summary:'情绪在躁狂/轻躁狂与抑郁两个极端之间波动，不是普通的“心情起伏”。',
+    signs:[
+      '躁狂期：睡眠需求大幅减少却精力充沛、话多、思维飞快',
+      '躁狂期：冲动消费、冒险行为、易怒、自我评价异常膨胀',
+      '抑郁期：情绪低落、无望、行动迟缓、兴趣丧失',
+      '两个阶段之间可能间隔数月甚至数年，容易被误诊为单纯抑郁'
+    ],
+    tips:[
+      { t:'遵医嘱长期用药', d:'心境稳定剂不是“感觉好了就能停”。擅自停药是复发最常见的原因之一。' },
+      { t:'写情绪日记', d:'每天记录睡眠时长、情绪高低、精力水平，坚持几周就能看出自己的波动规律。' },
+      { t:'保护睡眠', d:'睡眠需求突然减少，往往是躁狂发作的第一个信号，需要马上告诉医生。' },
+      { t:'远离酒精与兴奋剂', d:'减少熬夜与高强度刺激，这些都可能诱发发作。' },
+      { t:'和家人约定预警信号', d:'提前告诉家人“我出现哪些表现时，请提醒我并陪我就医”。' }
+    ]
+  },
+  {
+    icon:'🌊', name:'创伤后应激障碍', en:'Post-Traumatic Stress Disorder', tag:'创伤相关', color:'#60a5fa',
+    summary:'经历重大创伤事件后，身心长期停留在“危险还没过去”的状态。',
+    signs:[
+      '反复闪回、噩梦，感觉像又重新经历了一次',
+      '强烈回避与创伤有关的人、地点、话题、感受',
+      '警觉性增高：易惊、失眠、易怒、难以放松',
+      '对世界和他人失去安全感，情感麻木、与人疏离'
+    ],
+    tips:[
+      { t:'先稳定，再处理', d:'在安全感和情绪调节能力建立起来之前，不必强迫自己回忆创伤细节。' },
+      { t:'接地练习', d:'双脚踩实地面，感受椅子的支撑，握一杯温水，把注意力带回“此刻我是安全的”。' },
+      { t:'建立“安全岛”意象', d:'想象一个让你完全放松的地方，把细节想清楚，紧张时随时回到那里。' },
+      { t:'寻求创伤取向的专业治疗', d:'EMDR、认知加工治疗（CPT）、延长暴露（PE）等都有充分的循证支持。' },
+      { t:'重建节律与连接', d:'规律作息、适度运动、与可信任的人相处，是最基础也最重要的修复。' }
+    ]
+  },
+  {
+    icon:'🌙', name:'失眠障碍', en:'Insomnia Disorder', tag:'睡眠问题', color:'#818cf8',
+    summary:'长期难以入睡、维持睡眠或早醒，并影响白天的状态，形成“怕睡不着”的恶性循环。',
+    signs:[
+      '入睡超过 30 分钟，或夜间频繁醒来、早醒后无法再睡',
+      '每周至少 3 晚，持续 3 个月以上',
+      '白天疲惫、注意力差、情绪不稳、效率下降',
+      '开始害怕上床，担心“今晚又睡不着”'
+    ],
+    tips:[
+      { t:'固定起床时间比固定入睡时间更重要', d:'周末也一样。起床时间稳定，生物钟才有锚点。' },
+      { t:'20 分钟法则', d:'躺下 20 分钟还睡不着，就起来到昏暗的地方做点无聊的事，有困意再回床。别在床上硬熬。' },
+      { t:'床只用来睡觉', d:'不在床上刷手机、工作、吃饭。让大脑重新建立“床＝睡觉”的条件反射。' },
+      { t:'管好咖啡因与酒精', d:'下午 3 点后不碰咖啡因，睡前 2 小时不大量进食、不饮酒。' },
+      { t:'早上晒 15–30 分钟自然光', d:'光照是调整生物钟最有效的工具之一。' },
+      { t:'首选 CBT-I', d:'失眠认知行为治疗是一线方案，长期效果优于安眠药。' }
+    ]
+  },
+  {
+    icon:'🍽️', name:'进食障碍', en:'Eating Disorders', tag:'行为与身体', color:'#fbbf24',
+    summary:'以极端方式控制体重与进食，背后往往是情绪、控制感与自我价值议题。',
+    signs:[
+      '极度害怕发胖，即使体重已明显偏低仍觉得“胖”',
+      '严格节食、催吐、滥用泻药、过度运动',
+      '暴食后强烈的羞耻感与失控感',
+      '体重、月经、皮肤、情绪、注意力明显受影响'
+    ],
+    tips:[
+      { t:'先恢复规律三餐', d:'让身体重新相信“食物会按时到来”，是打破节食—暴食循环的第一步。' },
+      { t:'暂停称重与计算热量', d:'把注意力从数字转移到身体感受：饿不饿、饱不饱、有没有力气。' },
+      { t:'尽早寻求专业帮助', d:'进食障碍是死亡率较高的心理疾病之一，需要心理、营养、医学三方协作。' },
+      { t:'家人可以这样陪伴', d:'不要说“你多吃点就好了”，而是陪伴、减少指责、一起就医、一起吃饭。' },
+      { t:'拒绝身材羞辱', d:'也拒绝把“瘦”等同于自律。身体不是用来被评判的。' }
+    ]
+  },
+  {
+    icon:'⚡', name:'注意缺陷多动障碍', en:'ADHD', tag:'神经发育', color:'#34d399',
+    summary:'不是“不努力”，而是大脑在执行功能、注意力调节与冲动控制上的差异。',
+    signs:[
+      '注意力难以持续，容易被外界打断，读几行就走神',
+      '拖延严重，任务启动困难，总要拖到最后一刻',
+      '丢三落四、时间感差、经常迟到或忘记约定',
+      '冲动、插话、坐不住，情绪起伏大、容易受挫'
+    ],
+    tips:[
+      { t:'把一切外部化', d:'写下来、设闹钟、用可视化清单。不要指望靠脑子记住事情，用环境帮你记住。' },
+      { t:'拆解到 5–10 分钟', d:'把任务切成小到“现在就能开始”的块，先做 2 分钟。启动比坚持更难。' },
+      { t:'番茄工作法 + 即时奖励', d:'25 分钟专注 + 5 分钟休息，完成后立刻给自己一点小奖励，比逼自己专注有效得多。' },
+      { t:'规律有氧运动', d:'每周几次中等强度有氧运动，对注意力与情绪调节有明确帮助。' },
+      { t:'值得做一次专业评估', d:'成人 ADHD 通过药物 + 行为训练可以显著改善，很多人是在成年后才被正确识别。' }
+    ]
+  },
+  {
+    icon:'🩺', name:'躯体症状障碍', en:'Somatic Symptom Disorder', tag:'身心交互', color:'#22d3ee',
+    summary:'身体的不适真实存在，痛苦也真实存在，只是检查找不到对应的器质性病变。',
+    signs:[
+      '反复出现疼痛、心慌、胸闷、胃肠不适、乏力等症状',
+      '多次检查无明显异常，但痛苦与担忧持续存在',
+      '反复就医、反复检查，仍无法安心',
+      '常伴随焦虑、抑郁、睡眠差、过度关注身体感受'
+    ],
+    tips:[
+      { t:'固定一位医生随访', d:'减少反复换医院与重复检查，稳定、连续的医患关系本身就是一种治疗。' },
+      { t:'理解“症状真实 ≠ 器官损坏”', d:'压力、情绪与神经系统会通过身体表达，这不代表你在“装病”或“想出来的”。' },
+      { t:'身体扫描冥想', d:'把注意力依次移到身体各部位，只是观察，不评判、不试图改变。' },
+      { t:'给情绪命名', d:'写下“我现在感到……（焦虑/委屈/愤怒）”。情绪被看见后，身体常常会松一点。' },
+      { t:'规律作息 + 温和运动 + CBT', d:'这是目前主要且有效的方向，而不是无止境的检查。' }
+    ]
+  },
+  {
+    icon:'🔥', name:'职业倦怠', en:'Burnout', tag:'压力与耗竭', color:'#fb7185',
+    summary:'长期工作压力下出现的情感耗竭、去人格化与成就感降低，是系统问题，不只是你不够坚强。',
+    signs:[
+      '情感耗竭：早上起来就觉得没电，怎么休息都缓不过来',
+      '去人格化：对工作冷漠、讽刺，机械应付，事不关己',
+      '成就感降低：觉得自己做什么都没有意义',
+      '伴随失眠、头痛、肠胃不适、易怒、注意力下降'
+    ],
+    tips:[
+      { t:'划出明确的边界', d:'下班后关闭工作消息，给“不工作”一个具体的开始与结束时间。' },
+      { t:'真正的恢复不是刷手机', d:'恢复来自睡眠、运动、自然环境和面对面的社交，而不是继续消耗注意力的短视频。' },
+      { t:'每天留 30 分钟给自己', d:'做一件与工作完全无关、纯粹因为喜欢而做的事。' },
+      { t:'找出真正的原因', d:'是工作量过大、价值冲突，还是长期缺乏支持？不同原因需要不同对策。' },
+      { t:'倦怠是系统问题', d:'不要只怪自己不够坚强。必要时考虑调整岗位、寻求支持，甚至离开消耗你的环境。' }
+    ]
+  },
+  {
+    icon:'📱', name:'手机与网络成瘾', en:'Internet / Smartphone Addiction', tag:'行为成瘾', color:'#c084fc',
+    summary:'离开手机就焦虑，明知该停却停不下来，用刷屏来逃避现实中的压力。',
+    signs:[
+      '频繁无意识地打开手机，一刷就是一两个小时',
+      '离开手机、断网就明显焦虑、烦躁',
+      '明知影响睡眠、学习、工作与关系，仍无法减少',
+      '用刷屏来逃避现实压力、孤独或负面情绪'
+    ],
+    tips:[
+      { t:'物理隔离最有效', d:'关掉非必要通知，把手机移出卧室，改用实体闹钟。意志力打不过便利。' },
+      { t:'设置无手机时段与区域', d:'比如吃饭时、睡前一小时、卧室里。规则越具体越容易执行。' },
+      { t:'用替代，而不是压抑', d:'想刷手机时，先做 2 分钟别的事：喝水、拉伸、看窗外。冲动通常几分钟就会过去。' },
+      { t:'记录一周屏幕时间', d:'找出最容易失控的场景（比如睡前、通勤、无聊时），提前为它设计对策。' },
+      { t:'问自己一个问题', d:'我是在娱乐，还是在逃避什么？如果答案是后者，那需要处理的其实是那个“什么”。' }
+    ]
+  },
+  {
+    icon:'🆘', name:'危机与自杀预防', en:'Crisis Support', tag:'紧急支持', color:'#ff4d6d', danger:true,
+    summary:'如果你正想到死亡、想伤害自己，或觉得再也撑不下去了——请先停下来，看完这一页。',
+    signs:[
+      '反复想到死亡，或觉得“没有我会更好”',
+      '出现自伤行为，或开始安排后事、送走物品',
+      '情绪突然从极度低落变得异常平静，反而更危险',
+      '大量饮酒、严重失眠、剧烈绝望感，会显著提高风险',
+      '身边有人说出“不想活了”“撑不下去了”，也需要被认真对待'
+    ],
+    tips:[
+      { t:'立刻联系可信任的人', d:'不要独自待着。告诉对方你的真实感受，哪怕只是“我现在很不好，需要你陪我”。' },
+      { t:'拨打专业热线', d:'全国心理援助热线 12356（24 小时）。也可以前往当地精神卫生中心急诊或综合医院急诊。' },
+      { t:'先让环境变安全', d:'把可能伤害自己的物品暂时交给别人保管，远离高风险场所。' },
+      { t:'记住这一句', d:'想结束的是痛苦，不是生命。而痛苦，是可以被治疗、被缓解的。' },
+      { t:'如果你想帮助身边的人', d:'直接问“你最近是不是想过伤害自己？”——直接询问不会诱导自杀，反而常常带来帮助与释放。' }
+    ],
+    alert:'🆘 如果你此刻正处于危险中，请立即拨打 120 / 110，或前往最近的医院急诊。你值得被救，也值得被帮助。'
+  }
+];
+
+/* ==================== 环境检测 ==================== */
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isCoarse = window.matchMedia('(pointer: coarse)').matches;
+const enableGlow = !reduceMotion && !isCoarse;
+
+/* ==================== 渲染卡片 ==================== */
+const grid = document.getElementById('grid');
+const overlay = document.getElementById('overlay');
+const modal = document.getElementById('modal');
+let currentIndex = -1;
+
+const frag = document.createDocumentFragment();
+
+conditions.forEach((c, i) => {
+  const card = document.createElement('article');
+  card.className = 'card glass' + (c.danger ? ' danger' : '');
+  card.style.setProperty('--accent', c.color);
+  card.style.animationDelay = (i * 40) + 'ms';
+  card.tabIndex = 0;
+  card.setAttribute('role', 'button');
+  card.setAttribute('aria-label', c.name + '，点击查看调整建议');
+
+  card.innerHTML = `
+    <div class="blob" style="background: radial-gradient(circle at 42% 42%, ${c.color} 0%, transparent 66%)"></div>
+    <div class="card-icon">${c.icon}</div>
+    <div>
+      <h3>${c.name}</h3>
+      <p class="en">${c.en}</p>
+    </div>
+    <p class="summary">${c.summary}</p>
+    <div class="card-foot">
+      <span class="tag">${c.tag}</span>
+      <span class="hint">查看建议 <i>→</i></span>
+    </div>
+  `;
+
+  card.addEventListener('click', () => openModal(i));
+  card.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openModal(i);
+    }
+  });
+
+  if (enableGlow) {
+    card.addEventListener('pointerenter', e => {
+      activeCard = card;
+      px = e.clientX; py = e.clientY;
+      scheduleGlow();
+    });
+    card.addEventListener('pointerleave', () => {
+      if (activeCard === card) activeCard = null;
+    });
+  }
+
+  frag.appendChild(card);
+});
+
+grid.appendChild(frag);
+
+/* ==================== 高光跟随（rAF 节流 + 事件委托） ==================== */
+let activeCard = null;
+let rafId = null;
+let px = 0, py = 0;
+
+function flushGlow(){
+  rafId = null;
+  if (!activeCard) return;
+  const r = activeCard.getBoundingClientRect();
+  activeCard.style.setProperty('--mx', (px - r.left) + 'px');
+  activeCard.style.setProperty('--my', (py - r.top) + 'px');
+}
+
+function scheduleGlow(){
+  if (rafId === null) rafId = requestAnimationFrame(flushGlow);
+}
+
+if (enableGlow) {
+  grid.addEventListener('pointermove', e => {
+    if (!activeCard) return;
+    px = e.clientX; py = e.clientY;
+    scheduleGlow();
+  }, { passive: true });
+}
+
+/* ==================== 弹窗 ==================== */
+function modalHTML(c, index){
+  return `
+    <div class="modal-head">
+      <div class="card-icon">${c.icon}</div>
+      <div>
+        <h2>${c.name}</h2>
+        <p class="en">${c.en}</p>
+      </div>
+      <span class="tag">${c.tag}</span>
+      <button class="modal-close" aria-label="关闭窗口">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <section>
+        <h4><span class="dot"></span>核心表现</h4>
+        <ul class="signs">
+          ${c.signs.map(s => `<li>${s}</li>`).join('')}
+        </ul>
+      </section>
+
+      <section>
+        <h4><span class="dot"></span>调整建议</h4>
+        <ul class="tips">
+          ${c.tips.map((t, i) => `
+            <li>
+              <span class="num">${i + 1}</span>
+              <div>
+                <b>${t.t}</b>
+                <p>${t.d}</p>
+              </div>
+            </li>
+          `).join('')}
+        </ul>
+      </section>
+
+      ${c.alert ? `<div class="alert">${c.alert}</div>` : ''}
+    </div>
+
+    <div class="modal-foot">
+      <button class="nav-btn" data-dir="-1">← 上一个</button>
+      <span class="counter">${index + 1} / ${conditions.length}</span>
+      <button class="nav-btn" data-dir="1">下一个 →</button>
+    </div>
+  `;
+}
+
+function openModal(index){
+  currentIndex = (index + conditions.length) % conditions.length;
+  const c = conditions[currentIndex];
+
+  modal.style.setProperty('--accent', c.color);
+  modal.innerHTML = modalHTML(c, currentIndex);
+
+  modal.querySelector('.modal-close').addEventListener('click', closeModal);
+  modal.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => openModal(currentIndex + Number(btn.dataset.dir)));
+  });
+
+  // 弹窗高光跟随（只在弹窗打开时绑定）
+  if (enableGlow) {
+    modal.addEventListener('pointermove', e => {
+      const r = modal.getBoundingClientRect();
+      modal.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+      modal.style.setProperty('--my', (e.clientY - r.top) + 'px');
+    }, { passive: true });
+  }
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(){
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+overlay.addEventListener('click', e => {
+  if (e.target === overlay) closeModal();
+});
+
+document.addEventListener('keydown', e => {
+  if (!overlay.classList.contains('open')) return;
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'ArrowRight') openModal(currentIndex + 1);
+  if (e.key === 'ArrowLeft') openModal(currentIndex - 1);
+});
+</script>
+</body>
+</html>
